@@ -468,10 +468,8 @@ const YizhiApp = (function() {
      */
     function registerModule(name, moduleInstance) {
         if (modules.has(name)) {
-            if (APP_CONFIG.debug) {
-                console.warn(`Module ${name} is already registered`);
-            }
-            return modules.get(name);
+            console.warn(`Module ${name} is already registered`);
+            return;
         }
 
         PerformanceMonitor.start(`register_${name}`);
@@ -483,21 +481,8 @@ const YizhiApp = (function() {
             console.log(`Module registered: ${name}`);
         }
 
-        // 如果应用已经初始化，则立即初始化新注册的模块
-        if (isInitialized && typeof moduleInstance.init === 'function') {
-            Promise.resolve(moduleInstance.init())
-                .then(() => {
-                    if (APP_CONFIG.debug) {
-                        console.log(`Module initialized lazily: ${name}`);
-                    }
-                })
-                .catch(error => ErrorHandler.handle(error, `Module Init: ${name}`));
-        }
-
         // 触发模块注册事件
         EventBus.emit('module:registered', { name, module: moduleInstance });
-
-        return moduleInstance;
     }
 
     /**
@@ -681,15 +666,6 @@ const YizhiApp = (function() {
                     }
                 });
 
-                // 确保模块已经加载
-                if (!modules.has(sectionId) && globalThis.ModuleLoader?.ensure) {
-                    try {
-                        await globalThis.ModuleLoader.ensure(sectionId);
-                    } catch (error) {
-                        ErrorHandler.handle(error, `Module Load: ${sectionId}`);
-                    }
-                }
-
                 // 触发模块激活
                 const moduleInstance = modules.get(sectionId);
                 if (moduleInstance && typeof moduleInstance.onActivate === 'function') {
@@ -853,7 +829,6 @@ const YizhiApp = (function() {
         registerModule,
         getModule,
         getAllModules,
-        hasModule: (name) => modules.has(name),
         init,
         destroy,
         restart,
@@ -878,7 +853,69 @@ const YizhiApp = (function() {
 // 将 YizhiApp 暴露到全局作用域
 window.YizhiApp = YizhiApp;
 
-// 应用启动交由模块加载器负责
+// DOM 加载完成后初始化应用
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // 等待一个微任务以确保所有同步脚本都已执行
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        // 注册所有模块
+        if (typeof ThemeModule !== 'undefined') {
+            YizhiApp.registerModule('theme', ThemeModule);
+        }
+        if (typeof NotificationModule !== 'undefined') {
+            YizhiApp.registerModule('notification', NotificationModule);
+        }
+        if (typeof HexagramDataService !== 'undefined') {
+            YizhiApp.registerModule('hexagramData', HexagramDataService);
+        }
+        if (typeof DivinationModule !== 'undefined') {
+            YizhiApp.registerModule('divination', DivinationModule);
+        }
+        if (typeof HistoryModule !== 'undefined') {
+            YizhiApp.registerModule('history', HistoryModule);
+        }
+        if (typeof HexagramAnalyzerModule !== 'undefined') {
+            YizhiApp.registerModule('hexagram-analyzer', HexagramAnalyzerModule);
+        }
+        if (typeof KnowledgeModule !== 'undefined') {
+            YizhiApp.registerModule('knowledge', KnowledgeModule);
+        }
+        if (typeof SearchModule !== 'undefined') {
+            YizhiApp.registerModule('search', SearchModule);
+        }
+        if (typeof ModalModule !== 'undefined') {
+            YizhiApp.registerModule('modal', ModalModule);
+        }
+        if (typeof HelpModule !== 'undefined') {
+            YizhiApp.registerModule('help', HelpModule);
+        }
+
+        // 初始化应用
+        await YizhiApp.init();
+
+        // 在调试模式下输出状态信息
+        if (APP_CONFIG.debug) {
+            console.log('易之系统启动完成');
+            console.log('应用状态:', YizhiApp.getStatus());
+        }
+
+    } catch (error) {
+        console.error('应用启动失败:', error);
+
+        // 显示错误信息给用户
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'startup-error';
+        errorMessage.innerHTML = `
+            <div class="error-content">
+                <h3>系统启动失败</h3>
+                <p>很抱歉，易之系统在启动过程中遇到了问题。</p>
+                <button onclick="location.reload()" class="btn btn-primary">重新加载</button>
+            </div>
+        `;
+        document.body.appendChild(errorMessage);
+    }
+});
 
 // 错误边界 - 捕获未处理的错误
 window.addEventListener('error', (event) => {
