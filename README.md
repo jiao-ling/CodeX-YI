@@ -1,2 +1,2 @@
-# CodeX-YI
-codex优化YI
+# YI
+卜卦系统
