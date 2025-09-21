@@ -155,6 +155,32 @@ const Utils = {
 const StorageManager = {
     // 内存存储对象
     _memoryStorage: new Map(),
+    _engines: null,
+
+    _resolveEngines() {
+        if (this._engines) {
+            return this._engines;
+        }
+
+        const engines = [];
+        if (typeof localStorage !== 'undefined') {
+            engines.push({ type: 'local', engine: localStorage });
+        }
+        if (typeof sessionStorage !== 'undefined') {
+            engines.push({ type: 'session', engine: sessionStorage });
+        }
+
+        this._engines = engines;
+        return engines;
+    },
+
+    _disableEngine(type) {
+        if (!this._engines) {
+            return;
+        }
+
+        this._engines = this._engines.filter(entry => entry.type !== type);
+    },
 
     /**
      * 设置项目
@@ -164,16 +190,30 @@ const StorageManager = {
     setItem(key, value) {
         const fullKey = APP_CONFIG.storage.prefix + key;
 
+        let serializedValue;
         try {
-            // 尝试使用 sessionStorage（如果可用）
-            if (typeof sessionStorage !== 'undefined') {
-                sessionStorage.setItem(fullKey, JSON.stringify(value));
-            } else {
-                // 回退到内存存储
-                this._memoryStorage.set(fullKey, value);
-            }
+            serializedValue = JSON.stringify(value);
         } catch (error) {
-            console.warn('Storage failed, using memory storage:', error);
+            console.warn('Storage serialization failed:', error);
+            return;
+        }
+
+        let stored = false;
+        const engines = [...this._resolveEngines()];
+
+        for (const entry of engines) {
+            try {
+                entry.engine.setItem(fullKey, serializedValue);
+                stored = true;
+            } catch (error) {
+                console.warn(`Storage set failed on ${entry.type}Storage:`, error);
+                this._disableEngine(entry.type);
+            }
+        }
+
+        if (stored) {
+            this._memoryStorage.delete(fullKey);
+        } else if (APP_CONFIG.storage.useMemoryFallback) {
             this._memoryStorage.set(fullKey, value);
         }
     },
@@ -185,20 +225,25 @@ const StorageManager = {
      */
     getItem(key, defaultValue = null) {
         const fullKey = APP_CONFIG.storage.prefix + key;
+        const engines = [...this._resolveEngines()];
 
-        try {
-            // 尝试从 sessionStorage 读取
-            if (typeof sessionStorage !== 'undefined') {
-                const item = sessionStorage.getItem(fullKey);
-                return item ? JSON.parse(item) : defaultValue;
-            } else {
-                // 从内存存储读取
-                return this._memoryStorage.get(fullKey) || defaultValue;
+        for (const entry of engines) {
+            try {
+                const item = entry.engine.getItem(fullKey);
+                if (item !== null) {
+                    return Utils.safeJSONParse(item, defaultValue);
+                }
+            } catch (error) {
+                console.warn(`Storage read failed from ${entry.type}Storage:`, error);
+                this._disableEngine(entry.type);
             }
-        } catch (error) {
-            console.warn('Storage read failed:', error);
-            return this._memoryStorage.get(fullKey) || defaultValue;
         }
+
+        if (this._memoryStorage.has(fullKey)) {
+            return this._memoryStorage.get(fullKey);
+        }
+
+        return defaultValue;
     },
 
     /**
@@ -207,37 +252,44 @@ const StorageManager = {
      */
     removeItem(key) {
         const fullKey = APP_CONFIG.storage.prefix + key;
+        const engines = [...this._resolveEngines()];
 
-        try {
-            if (typeof sessionStorage !== 'undefined') {
-                sessionStorage.removeItem(fullKey);
+        for (const entry of engines) {
+            try {
+                entry.engine.removeItem(fullKey);
+            } catch (error) {
+                console.warn(`Storage removal failed from ${entry.type}Storage:`, error);
+                this._disableEngine(entry.type);
             }
-            this._memoryStorage.delete(fullKey);
-        } catch (error) {
-            console.warn('Storage removal failed:', error);
-            this._memoryStorage.delete(fullKey);
         }
+
+        this._memoryStorage.delete(fullKey);
     },
 
     /**
      * 清空存储
      */
     clear() {
-        try {
-            if (typeof sessionStorage !== 'undefined') {
-                // 只清除应用相关的项目
-                const keys = Object.keys(sessionStorage);
-                keys.forEach(key => {
-                    if (key.startsWith(APP_CONFIG.storage.prefix)) {
-                        sessionStorage.removeItem(key);
+        const engines = [...this._resolveEngines()];
+
+        for (const entry of engines) {
+            try {
+                const keysToRemove = [];
+                for (let i = 0; i < entry.engine.length; i++) {
+                    const storageKey = entry.engine.key(i);
+                    if (storageKey && storageKey.startsWith(APP_CONFIG.storage.prefix)) {
+                        keysToRemove.push(storageKey);
                     }
-                });
+                }
+
+                keysToRemove.forEach(key => entry.engine.removeItem(key));
+            } catch (error) {
+                console.warn(`Storage clear failed on ${entry.type}Storage:`, error);
+                this._disableEngine(entry.type);
             }
-            this._memoryStorage.clear();
-        } catch (error) {
-            console.warn('Storage clear failed:', error);
-            this._memoryStorage.clear();
         }
+
+        this._memoryStorage.clear();
     }
 };
 
