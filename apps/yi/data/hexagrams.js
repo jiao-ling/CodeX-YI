@@ -1,4 +1,4 @@
-    const hexagramsData = {
+window.__HEXAGRAM_DATA__ = {
         "1": {
             "name": "乾",
             "unicode": "\u4DC0",
@@ -1024,3 +1024,4 @@
             ]
         }
     }
+;
