@@ -8,6 +8,8 @@
 ## 1) 目标
 将 `jiao-ling/YI` 引入本仓（路径：`apps/yi/`），在仅使用 **HTML / CSS / JS（三件套）** 的前提下进行工程化与可维护性优化，并通过 GitHub Pages 自动部署静态站点。
 
+当前阶段聚焦核心功能体验，未启用 PWA 相关特性，避免缺失资源导致加载失败。若后续需要跨端安装体验，可在完成功能迭代后补齐 `manifest.json`、站点图标与 Service Worker。
+
 ---
 
 ## 2) 仓库结构
@@ -27,3 +29,19 @@
   git remote add yi-origin https://github.com/jiao-ling/YI.git
   git fetch yi-origin
   git subtree add --prefix=apps/yi yi-origin main --squash
+  ```
+
+---
+
+## 4) 部署说明
+- 默认分支：`main`
+- 静态资源目录：`apps/yi/`
+- Pages 工作流：`.github/workflows/pages.yml`
+- 首次启用 Pages 时需在仓库 Settings → Pages 中设置 Source=GitHub Actions（当前已配置）。
+
+---
+
+## 5) 后续改进建议（未排期）
+- 将八卦基础数据外置化，和卦象数据结构统一管理。
+- 为数据 JSON 与 JS 回退之间的同步脚本提供自动化方案。
+- 若重启 PWA 支持，需补齐 manifest、站点图标及后续 Service Worker。

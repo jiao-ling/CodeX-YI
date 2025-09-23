@@ -22,3 +22,6 @@
 
 ## 部署
 仓库通过 GitHub Pages 自动部署静态资源，配置位于 `.github/workflows/pages.yml`（如需调整请同步更新）。
+
+## 范围说明
+当前工程专注于功能体验，未启用任何 PWA 相关资源或 Service Worker，避免额外依赖导致的加载失败。如需拓展跨端安装能力，可在后续迭代补充 `manifest.json`、图标和离线缓存策略。
