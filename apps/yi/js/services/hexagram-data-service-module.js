@@ -2,94 +2,13 @@
  * 卦象数据服务 - 管理易经卦象数据
  */
 const HexagramDataService = (function() {
-    // 八卦数据
-    const baguaData = {
-        "乾": {
-            symbol: "☰",
-            binary: "111",
-            nature: "天",
-            attribute: "刚健、创造",
-            direction: "西北",
-            animal: "马",
-            element: "金",
-            family: "父"
-        },
-        "坤": {
-            symbol: "☷",
-            binary: "000",
-            nature: "地",
-            attribute: "柔顺、包容",
-            direction: "西南",
-            animal: "牛",
-            element: "土",
-            family: "母"
-        },
-        "震": {
-            symbol: "☳",
-            binary: "001",
-            nature: "雷",
-            attribute: "动、生发",
-            direction: "东",
-            animal: "龙",
-            element: "木",
-            family: "长男"
-        },
-        "巽": {
-            symbol: "☴",
-            binary: "110",
-            nature: "风",
-            attribute: "入、顺从",
-            direction: "东南",
-            animal: "鸡",
-            element: "木",
-            family: "长女"
-        },
-        "坎": {
-            symbol: "☵",
-            binary: "010",
-            nature: "水",
-            attribute: "陷、险",
-            direction: "北",
-            animal: "猪",
-            element: "水",
-            family: "中男"
-        },
-        "离": {
-            symbol: "☲",
-            binary: "101",
-            nature: "火",
-            attribute: "丽、明",
-            direction: "南",
-            animal: "雉",
-            element: "火",
-            family: "中女"
-        },
-        "艮": {
-            symbol: "☶",
-            binary: "100",
-            nature: "山",
-            attribute: "止、限制",
-            direction: "东北",
-            animal: "狗",
-            element: "土",
-            family: "少男"
-        },
-        "兑": {
-            symbol: "☱",
-            binary: "011",
-            nature: "泽",
-            attribute: "悦、喜",
-            direction: "西",
-            animal: "羊",
-            element: "金",
-            family: "少女"
-        }
-    };
 
     const DATA_URL = 'data/hexagrams.json';
+    const BAGUA_DATA_URL = 'data/bagua.json';
 
     let rawHexagramData = null;
     let hexagramMap = {};
+    let baguaData = null;
     let isInitialized = false;
 
     // 初始化
@@ -127,7 +46,7 @@ const HexagramDataService = (function() {
                 rawHexagramData = data;
                 return data;
             } catch (error) {
-                const fallbackData = getPreloadedData();
+                const fallbackData = getPreloadedHexagramData();
                 if (fallbackData) {
                     console.warn('加载远程卦象数据失败，使用预加载数据回退。', error);
                     rawHexagramData = fallbackData;
@@ -138,7 +57,7 @@ const HexagramDataService = (function() {
             }
         }
 
-        const fallback = getPreloadedData();
+        const fallback = getPreloadedHexagramData();
         if (fallback) {
             rawHexagramData = fallback;
             return fallback;
@@ -149,15 +68,60 @@ const HexagramDataService = (function() {
         throw loadError;
     }
 
-    function getPreloadedData() {
+    function getPreloadedHexagramData() {
         if (typeof window !== 'undefined' && window.__HEXAGRAM_DATA__) {
             return window.__HEXAGRAM_DATA__;
         }
         return null;
     }
 
+    async function loadBaguaData() {
+        if (baguaData) {
+            return baguaData;
+        }
+
+        if (typeof fetch === 'function') {
+            try {
+                const response = await fetch(BAGUA_DATA_URL, { cache: 'default' });
+                if (!response.ok) {
+                    throw new Error('Failed to load bagua data: ' + response.status);
+                }
+                const data = await response.json();
+                baguaData = data;
+                return data;
+            } catch (error) {
+                const fallbackData = getPreloadedBaguaData();
+                if (fallbackData) {
+                    console.warn('加载远程八卦数据失败，使用预加载数据回退。', error);
+                    baguaData = fallbackData;
+                    return fallbackData;
+                }
+                YizhiApp.errors.handle(error, 'Load Bagua Data');
+                throw error;
+            }
+        }
+
+        const fallback = getPreloadedBaguaData();
+        if (fallback) {
+            baguaData = fallback;
+            return fallback;
+        }
+
+        const loadError = new Error('Bagua data is not available.');
+        YizhiApp.errors.handle(loadError, 'Load Bagua Data');
+        throw loadError;
+    }
+
+    function getPreloadedBaguaData() {
+        if (typeof window !== 'undefined' && window.__BAGUA_DATA__) {
+            return window.__BAGUA_DATA__;
+        }
+        return null;
+    }
+
     // 处理卦象数据
     async function processHexagramData() {
+        await loadBaguaData();
         const data = await loadHexagramData();
         hexagramMap = YizhiApp.utils.deepClone(data);
 
@@ -228,6 +192,9 @@ const HexagramDataService = (function() {
 
     // 根据二进制代码获取八卦
     function getBaguaByBinary(binary) {
+        if (!baguaData) {
+            return null;
+        }
         for (const name in baguaData) {
             if (baguaData[name].binary === binary) {
                 return name;
@@ -264,11 +231,11 @@ const HexagramDataService = (function() {
     }
 
     function getBaguaData() {
-        return baguaData;
+        return baguaData || {};
     }
 
     function getBagua(name) {
-        return baguaData[name] || null;
+        return (baguaData && baguaData[name]) || null;
     }
 
     function getHexagramByTrigrams(upper, lower) {
@@ -336,7 +303,4 @@ const HexagramDataService = (function() {
         get isInitialized() { return isInitialized; }
     };
 })();
-
-
-
 

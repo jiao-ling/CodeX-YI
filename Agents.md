@@ -14,6 +14,7 @@
 
 ## 2) 仓库结构
 - `apps/yi/` — YI 的静态站点源码（HTML/CSS/JS）
+- `apps/yi/data/` — 卦象与八卦数据（JSON 与 JS 回退）。
 - `.github/workflows/pages.yml` — GitHub Pages 自动部署
 - `.githooks/` — 本地 Git 钩子（提交信息中文校验）
 - `.gitmessage` — 中文提交信息模板（可选）
@@ -42,6 +43,5 @@
 ---
 
 ## 5) 后续改进建议（未排期）
-- 将八卦基础数据外置化，和卦象数据结构统一管理。
 - 为数据 JSON 与 JS 回退之间的同步脚本提供自动化方案。
 - 若重启 PWA 支持，需补齐 manifest、站点图标及后续 Service Worker。

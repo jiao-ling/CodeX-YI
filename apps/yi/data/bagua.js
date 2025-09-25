@@ -1,0 +1,83 @@
+window.__BAGUA_DATA__ = {
+    "乾": {
+        "symbol": "☰",
+        "binary": "111",
+        "nature": "天",
+        "attribute": "刚健、创造",
+        "direction": "西北",
+        "animal": "马",
+        "element": "金",
+        "family": "父"
+    },
+    "坤": {
+        "symbol": "☷",
+        "binary": "000",
+        "nature": "地",
+        "attribute": "柔顺、包容",
+        "direction": "西南",
+        "animal": "牛",
+        "element": "土",
+        "family": "母"
+    },
+    "震": {
+        "symbol": "☳",
+        "binary": "001",
+        "nature": "雷",
+        "attribute": "动、生发",
+        "direction": "东",
+        "animal": "龙",
+        "element": "木",
+        "family": "长男"
+    },
+    "巽": {
+        "symbol": "☴",
+        "binary": "110",
+        "nature": "风",
+        "attribute": "入、顺从",
+        "direction": "东南",
+        "animal": "鸡",
+        "element": "木",
+        "family": "长女"
+    },
+    "坎": {
+        "symbol": "☵",
+        "binary": "010",
+        "nature": "水",
+        "attribute": "陷、险",
+        "direction": "北",
+        "animal": "猪",
+        "element": "水",
+        "family": "中男"
+    },
+    "离": {
+        "symbol": "☲",
+        "binary": "101",
+        "nature": "火",
+        "attribute": "丽、明",
+        "direction": "南",
+        "animal": "雉",
+        "element": "火",
+        "family": "中女"
+    },
+    "艮": {
+        "symbol": "☶",
+        "binary": "100",
+        "nature": "山",
+        "attribute": "止、限制",
+        "direction": "东北",
+        "animal": "狗",
+        "element": "土",
+        "family": "少男"
+    },
+    "兑": {
+        "symbol": "☱",
+        "binary": "011",
+        "nature": "泽",
+        "attribute": "悦、喜",
+        "direction": "西",
+        "animal": "羊",
+        "element": "金",
+        "family": "少女"
+    }
+}
+;
